@@ -73,7 +73,7 @@ def generate_temp_table_schema():
             go """
 
 def generate_insert_from_records(r: SelfPayRecord) -> str:
-    insert_statement = f"insert into #tmp values ({r.reference_id}, {r.current_status}, {r.stripe_price}, '{r.stripe_price_currency}', '{r.stripe_payment_id}', '{r.stripe_date}'"
+    insert_statement = f"insert into #tmp values ({r.reference_id}, {r.current_status}, {r.stripe_price}, '{r.stripe_price_currency}', '{r.stripe_payment_id}', '{r.stripe_date}')"
     return insert_statement
 
 
