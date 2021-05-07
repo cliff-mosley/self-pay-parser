@@ -6,8 +6,8 @@ SELECT DISTINCT
              WHEN ISNULL(bo.BgOrderID , '') = '' AND ISNULL(boi.BgOrderID , '') <> ''
                 THEN 'Missing/Deleted'
         END AS [Screening Direct Order Status]
-    ,   ISNULL(c.Company, cc.company) [Screening Direct Customer], 
-    ,   t.stripe_date [Stripe Payment Date], 
+    ,   ISNULL(c.Company, cc.company) [Screening Direct Customer]
+    ,   t.stripe_date [Stripe Payment Date]
     ,   t.stripe_price [Stripe Price]
     --bei.InviteID 
     ,   t.stripe_payment_id [Screening Direct Payment Unique identifier]
