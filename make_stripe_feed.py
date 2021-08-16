@@ -1,8 +1,10 @@
 #! /usr/bin/python3
 # from tabulate import tabulate
 import argparse
+import boto3
 import json
 import logging
+from boto3.dynamodb.conditions import Key
 from time import gmtime, strftime
 from dataclasses import dataclass
 
@@ -30,7 +32,18 @@ class SelfPayRecord:
 
 
 def get_json_from_s3(bucket: str):
+    """
+    Get the data out of a S3 bucket
+    """
     raise NotImplementedError
+
+def get_data_from_dynamo(dynamodb=None, table_name='hub-selfpay-prod-dynamodb'):
+    if not dynamodb:
+        dynamodb = boto3.resource('dynamodb', endpoint_url="http://localhost:8000")
+
+    table = dynamodb.Table(table_name)
+    response = table.query(Select='ALL_ATTRIBUTES')
+    return response
 
 
 def execute_report_queries(query_list: list[str]):
@@ -44,9 +57,11 @@ def extract_price(platform_data: dict) -> tuple:
         currency = platform_data['M']['currency']['S']
     except KeyError:
         currency = ""
-    amount = float(platform_data['M']['stripePrice']['N'])
+    amount = platform_data['M']['stripePrice']['N']
     return (currency, amount)
 
+def format_reference_id(raw_reference_string) -> str:
+    return raw_reference_string.replace("::WFD::PROD", "")
 
 def convert_epoch_time(i: int) -> str:
     t = gmtime(int(i))
@@ -57,7 +72,7 @@ def populate_self_pay_record(d: dict) -> SelfPayRecord:
     # extract returns a tuple of currency and amount
     extracted_price = extract_price(d['platformData'])
     record = SelfPayRecord(
-        d['referenceId']['S'][:8],
+        format_reference_id(d['referenceId']['S']),
         d['currentStatus']['N'],
         extracted_price[1], 
         extracted_price[0],
@@ -96,10 +111,20 @@ def main():
         "--self_pay_file",
         help="JSON file containing the records needed in the self-pay feed",
         required=True)
+    parser.add_argument(
+        "--dynamo_db_url",
+        help="URL to DynamoDB endpoint",
+        required=False)
+    parser.add_argument(
+        "--dynamo_db_table",
+        help="DynamoDB table to scan/query",
+        required=False)
+
 
     args = parser.parse_args()
 
-    print(generate_temp_table_schema())
+    # print(generate_temp_table_schema())
+    # get_data_from_dynamo(dynamodb=args.dynamo_db_url, table=args.dynamo_db_table)
 
     # json returned from dynamo is in list of length, data
     #   so we'll extract the data element and use it from there
